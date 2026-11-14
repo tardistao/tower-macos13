@@ -59,7 +59,7 @@ final class MotionDesignTests: XCTestCase {
         let cardSource = String(source[cardStart.lowerBound..<cardEnd.lowerBound])
 
         XCTAssertTrue(
-            cardSource.contains(".geometryGroup()"),
+            cardSource.contains(".towerGeometryGroup()"),
             "地图节点收起时，订阅卡片背景与流量信息必须作为同一几何单元移动"
         )
     }
@@ -127,7 +127,7 @@ final class MotionDesignTests: XCTestCase {
         let overlaySource = String(source[overlayStart.lowerBound...])
 
         XCTAssertTrue(overlaySource.contains("@State private var presentedToast"))
-        XCTAssertTrue(overlaySource.contains(".onChange(of: model.toast)"))
+        XCTAssertTrue(overlaySource.contains(".towerOnChange(of: model.toast)"))
         XCTAssertTrue(overlaySource.contains("withAnimation(appearance)"))
         XCTAssertFalse(
             overlaySource.contains(".animation(appearance, value: model.toast?.id)"),

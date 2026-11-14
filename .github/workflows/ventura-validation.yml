@@ -47,6 +47,8 @@ jobs:
             .artifacts/build/Build/Products/Debug-maccatalyst/Tower.app
           codesign --verify --deep --strict --verbose=2 \
             .artifacts/build/Build/Products/Debug-maccatalyst/Tower.app
+      # This one ImageRenderer snapshot aborts inside Metal on hosted Intel VMs
+      # ("Target device architecture is nil"). Keep it enabled on real Macs.
       - name: Run unit tests
         run: |
           set -o pipefail
@@ -54,7 +56,9 @@ jobs:
             -destination 'platform=macOS,variant=Mac Catalyst,arch=x86_64' \
             -derivedDataPath .artifacts/build \
             CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 MACOSX_DEPLOYMENT_TARGET=13.0 \
-            -testLanguage zh-Hans -testRegion CN -only-testing:TowerTests test-without-building 2>&1 | tee .artifacts/tests.log
+            -testLanguage zh-Hans -testRegion CN -only-testing:TowerTests \
+            -skip-testing:TowerTests/WorldDotMapTests/testLatencyMapPaletteVisuals \
+            test-without-building 2>&1 | tee .artifacts/tests.log
       - name: Validate localization
         run: |
           set -o pipefail
