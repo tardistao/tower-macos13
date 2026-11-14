@@ -1,6 +1,8 @@
 > **macOS 13 / Intel 兼容分支（非官方）**
 >
-> 本分支基于 Tower 1.0.31（76）适配 Ventura。安装包和验证结果请查看 [云端构建](https://github.com/tardistao/tower-macos13/actions/workflows/ventura.yml)，附件名称为 `Tower-macOS13-Intel`。下方上游 1.0.31 DMG 要求 macOS 14，不能用于 Ventura。
+> **[下载 macOS 13 Intel 安装包](https://github.com/tardistao/tower-macos13/releases/download/v1.0.31-76-macos13-intel/Tower-1.0.31-macOS13-Intel.zip)** · [发布说明与校验文件](https://github.com/tardistao/tower-macos13/releases/tag/v1.0.31-76-macos13-intel)
+>
+> 基于 Tower 1.0.31（76）。下载 ZIP 后解压，将 Tower.app 拖入「应用程序」。最低 macOS 13.0，仅支持 Intel。已通过 Intel 云端启动检查。
 >
 > 自编译包使用临时签名，未经 Apple 公证；不包含作者的 iCloud 授权，因此 iCloud 同步不可用。macOS 13 实机运行仍需验证。
 
@@ -14,7 +16,7 @@
 
 在 iPhone、iPad 和 Mac 上管理机场订阅与自有节点，选好分流规则，一键导入你常用的客户端。
 
-<a href="https://github.com/pengchujin/tower/releases/download/v1.0.31-76/Tower-1.0.31-76-macOS-universal.dmg"><img src="docs/images/download-mac.svg" width="210" height="48" alt="免费下载 Mac 版"></a>
+<a href="https://github.com/tardistao/tower-macos13/releases/download/v1.0.31-76-macos13-intel/Tower-1.0.31-macOS13-Intel.zip"><img src="docs/images/download-mac.svg" width="210" height="48" alt="下载 macOS 13 Intel 兼容版"></a>
 &nbsp;
 <a href="https://apps.apple.com/app/id6797458927"><img src="docs/images/download-ios.svg" width="210" height="48" alt="App Store 支持"></a>
 
@@ -92,11 +94,8 @@
 ## 下载与安装
 
 - **iPhone / iPad**：[App Store](https://apps.apple.com/app/id6797458927)
-- **Mac**：[下载 DMG](https://github.com/pengchujin/tower/releases/download/v1.0.31-76/Tower-1.0.31-76-macOS-universal.dmg)，或使用 Homebrew：
-
-```sh
-brew install --cask pengchujin/tap/tower
-```
+- **macOS 13 / Intel**：[下载 ZIP 安装包](https://github.com/tardistao/tower-macos13/releases/download/v1.0.31-76-macos13-intel/Tower-1.0.31-macOS13-Intel.zip)。解压后将 Tower.app 拖入「应用程序」。
+- **上游官方版（macOS 14 及以上）**：[官方下载](https://github.com/pengchujin/tower/releases)。上游 Homebrew 包不适用于 Ventura。
 
 ---
 
