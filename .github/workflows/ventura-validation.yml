@@ -1,0 +1,75 @@
+name: Validate Ventura source
+on:
+  push:
+    branches: [ventura-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select stable Xcode
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import pathlib, re
+          candidates = []
+          for app in pathlib.Path('/Applications').glob('Xcode*.app'):
+              match = re.fullmatch(r'Xcode_(\d+(?:\.\d+)*)\.app', app.name)
+              if match and int(match[1].split('.')[0]) >= 26:
+                  candidates.append((tuple(map(int, match[1].split('.'))), app))
+          assert candidates, 'Stable Xcode 26 or later required'
+          print('DEVELOPER_DIR=' + str(max(candidates)[1] / 'Contents/Developer'))
+          PY
+      - name: Build test host
+        run: |
+          set -o pipefail
+          mkdir -p .artifacts
+          xcodebuild -version
+          xcodebuild -project Tower.xcodeproj -scheme Tower -configuration Debug \
+            -destination 'platform=macOS,variant=Mac Catalyst,arch=x86_64' \
+            -derivedDataPath .artifacts/build \
+            CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 MACOSX_DEPLOYMENT_TARGET=13.0 \
+            -only-testing:TowerTests build-for-testing 2>&1 | tee .artifacts/test-build.log
+      - name: Sign local test host
+        run: |
+          python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          # XCTest reads repository fixtures and must run outside the production
+          # sandbox. The distributed Release app keeps its sandbox entitlements.
+          ent = {'com.apple.security.get-task-allow': True}
+          Path('.artifacts/test.entitlements').write_bytes(plistlib.dumps(ent))
+          PY
+          codesign --force --deep --sign - --entitlements .artifacts/test.entitlements \
+            .artifacts/build/Build/Products/Debug-maccatalyst/Tower.app
+          codesign --verify --deep --strict --verbose=2 \
+            .artifacts/build/Build/Products/Debug-maccatalyst/Tower.app
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild -project Tower.xcodeproj -scheme Tower -configuration Debug \
+            -destination 'platform=macOS,variant=Mac Catalyst,arch=x86_64' \
+            -derivedDataPath .artifacts/build \
+            CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 MACOSX_DEPLOYMENT_TARGET=13.0 \
+            -only-testing:TowerTests test-without-building 2>&1 | tee .artifacts/tests.log
+      - name: Validate localization
+        run: |
+          set -o pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('Scripts/check_localization.sh')
+          s = p.read_text().replace('-exportLanguage zh-Hans >', '-exportLanguage zh-Hans CODE_SIGNING_ALLOWED=NO >')
+          p.write_text(s)
+          PY
+          bash Scripts/check_localization.sh 2>&1 | tee .artifacts/localization.log
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-diagnostics
+          path: .artifacts/*.log
+          include-hidden-files: true
+          retention-days: 14
