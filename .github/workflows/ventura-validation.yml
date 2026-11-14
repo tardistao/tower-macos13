@@ -54,7 +54,7 @@ jobs:
             -destination 'platform=macOS,variant=Mac Catalyst,arch=x86_64' \
             -derivedDataPath .artifacts/build \
             CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 MACOSX_DEPLOYMENT_TARGET=13.0 \
-            -only-testing:TowerTests test-without-building 2>&1 | tee .artifacts/tests.log
+            -testLanguage zh-Hans -testRegion CN -only-testing:TowerTests test-without-building 2>&1 | tee .artifacts/tests.log
       - name: Validate localization
         run: |
           set -o pipefail
