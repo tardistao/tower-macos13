@@ -35,7 +35,7 @@ jobs:
           xcodebuild -project Tower.xcodeproj -scheme Tower -configuration Release \
             -destination 'generic/platform=macOS,variant=Mac Catalyst' \
             -derivedDataPath .artifacts/build \
-            ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 MACOSX_DEPLOYMENT_TARGET=13.0 \
             CODE_SIGNING_ALLOWED=NO PRODUCT_BUNDLE_IDENTIFIER=com.tardistao.tower.ventura \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) TOWER_COMMUNITY_BUILD' \
             build 2>&1 | tee .artifacts/build.log
@@ -44,8 +44,8 @@ jobs:
           set -o pipefail
           xcodebuild -project Tower.xcodeproj -scheme Tower -configuration Debug \
             -destination 'platform=macOS,variant=Mac Catalyst,arch=x86_64' \
-            -derivedDataPath .artifacts/tests \
-            CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            -derivedDataPath .artifacts/build \
+            CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 MACOSX_DEPLOYMENT_TARGET=13.0 \
             -only-testing:TowerTests test 2>&1 | tee .artifacts/tests.log
       - name: Validate localization
         run: |
