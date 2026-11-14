@@ -1,0 +1,53 @@
+name: Publish verified Ventura installer
+on:
+  push:
+    branches: [publish-macos13-release]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Download the verified installer
+        run: |
+          gh run download 43593767457 --name Tower-macOS13-Intel --dir release_files
+          mv release_files/Tower-macOS13-Intel.zip release_files/Tower-1.0.31-macOS13-Intel.zip
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          p = Path('release_files/Tower-1.0.31-macOS13-Intel.zip')
+          digest = hashlib.sha256(p.read_bytes()).hexdigest()
+          expected = '335331714d5dad64a7b3a803b644178647cad676da93e1becfefd74ff18cc0da'
+          assert digest == expected, 'Installer differs from the validated package'
+          Path('release_files/SHA256SUMS.txt').write_text(digest + '  ' + p.name + '\n')
+          print('Verified:', p.name, p.stat().st_size, 'bytes', digest)
+          PY
+      - name: Publish release assets
+        run: |
+          cat > release-notes.md <<'NOTES'
+          非官方 macOS 13 Intel 兼容构建，基于 Tower 1.0.31（76）。
+
+          下载下方的 **Tower-1.0.31-macOS13-Intel.zip**，解压后将 Tower.app 拖入「应用程序」。
+
+          - 架构：Intel x86_64；最低 macOS 13.0。
+          - 已通过 Intel 云端启动检查和临时签名完整性检查。
+          - 此构建未经 Apple 公证，不支持 iCloud 同步，部分动画使用兼容效果。
+          - macOS 13 实机运行仍需验证；云端未执行需要 Metal GPU 的地图图片快照测试。
+
+          SHA-256：
+          `335331714d5dad64a7b3a803b644178647cad676da93e1becfefd74ff18cc0da`
+
+          应用源代码对应构建提交：`985527b845f5131a80630428e6e41c071273b9d4`。
+          NOTES
+          gh release create v1.0.31-76-macos13-intel \
+            release_files/Tower-1.0.31-macOS13-Intel.zip \
+            release_files/SHA256SUMS.txt \
+            --target 985527b845f5131a80630428e6e41c071273b9d4 \
+            --title 'Tower 1.0.31（76）macOS 13 Intel 兼容版' \
+            --notes-file release-notes.md --latest
