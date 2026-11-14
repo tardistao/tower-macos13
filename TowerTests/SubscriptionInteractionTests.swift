@@ -1039,7 +1039,7 @@ final class SubscriptionInteractionTests: XCTestCase {
             contentsOf: root.appendingPathComponent("Tower/Features/Subscriptions/SourceManagementView.swift"),
             encoding: .utf8
         )
-        XCTAssertTrue(management.contains("ToolbarItem(placement: .topBarTrailing)"))
+        XCTAssertTrue(management.contains("ToolbarItem(placement: .navigationBarTrailing)"))
         XCTAssertTrue(management.contains("SubscriptionRefreshToolbarButton(sources: subscriptionsToRefresh)"))
         XCTAssertTrue(management.contains("Button(\"更新\") {"))
         XCTAssertFalse(management.contains("Text(\"刷新\")"))

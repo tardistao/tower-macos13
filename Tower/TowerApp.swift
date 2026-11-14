@@ -11,7 +11,7 @@ struct TowerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AppRootView()
+            rootContent
                 .environmentObject(model)
                 .onAppear {
                     #if targetEnvironment(macCatalyst)
@@ -57,6 +57,21 @@ struct TowerApp: App {
                     }
                 }
         }
+    }
+
+    @ViewBuilder
+    private var rootContent: some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["TOWER_HEADLESS_UNIT_TESTS"] == "1" {
+            // Unit tests exercise services and models, not the live welcome scene.
+            // Hosted Intel runners may lack a usable Metal rendering device.
+            EmptyView()
+        } else {
+            AppRootView()
+        }
+        #else
+        AppRootView()
+        #endif
     }
 
     #if DEBUG
