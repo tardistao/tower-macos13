@@ -39,18 +39,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO PRODUCT_BUNDLE_IDENTIFIER=com.tardistao.tower.ventura \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) TOWER_COMMUNITY_BUILD' \
             build 2>&1 | tee .artifacts/build.log
-      - name: Run unit tests
-        run: |
-          set -o pipefail
-          xcodebuild -project Tower.xcodeproj -scheme Tower -configuration Debug \
-            -destination 'platform=macOS,variant=Mac Catalyst,arch=x86_64' \
-            -derivedDataPath .artifacts/build \
-            CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 MACOSX_DEPLOYMENT_TARGET=13.0 \
-            -only-testing:TowerTests test 2>&1 | tee .artifacts/tests.log
-      - name: Validate localization
-        run: |
-          set -o pipefail
-          bash Scripts/check_localization.sh 2>&1 | tee .artifacts/localization.log
       - name: Package and verify
         run: |
           set -euo pipefail
@@ -62,6 +50,7 @@ jobs:
           p = Path('.artifacts/build/Build/Products/Release-maccatalyst/Tower.app/Contents/Info.plist')
           info = plistlib.loads(p.read_bytes())
           assert int(info['LSMinimumSystemVersion'].split('.')[0]) <= 13, info
+          print('Minimum macOS:', info['LSMinimumSystemVersion'])
           ent = plistlib.loads(Path('Tower/TowerMac.entitlements').read_bytes())
           ent = {k:v for k,v in ent.items() if not k.startswith('com.apple.developer.')}
           Path('.artifacts/adhoc.entitlements').write_bytes(plistlib.dumps(ent))
@@ -74,8 +63,8 @@ jobs:
           from pathlib import Path
           import re
           s = Path('.artifacts/dist/load-commands.txt').read_text()
-          match = re.search(r'cmd LC_BUILD_VERSION\s+cmdsize \d+\s+platform (\d+)\s+minos (\S+)', s)
-          assert match and match[1] == '6', 'Expected Mac Catalyst Mach-O'
+          match = re.search(r'cmd LC_BUILD_VERSION\s+cmdsize \d+\s+platform (\S+)\s+minos (\S+)', s)
+          assert match and match[1] in ('6', 'MACCATALYST'), 'Expected Mac Catalyst Mach-O'
           assert tuple(map(int,match[2].split('.'))) < (17,), match[2]
           PY
           open -n "$APP"
@@ -91,6 +80,40 @@ jobs:
           name: Tower-macOS13-Intel
           path: .artifacts/dist/
           retention-days: 30
+          include-hidden-files: true
+      - name: Build unit tests
+        run: |
+          set -o pipefail
+          xcodebuild -project Tower.xcodeproj -scheme Tower -configuration Debug \
+            -destination 'platform=macOS,variant=Mac Catalyst,arch=x86_64' \
+            -derivedDataPath .artifacts/build \
+            CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 MACOSX_DEPLOYMENT_TARGET=13.0 \
+            -only-testing:TowerTests build-for-testing 2>&1 | tee .artifacts/tests-build.log
+      - name: Sign test host
+        run: |
+          python3 - <<'PY2'
+          import plistlib
+          from pathlib import Path
+          ent = plistlib.loads(Path('.artifacts/adhoc.entitlements').read_bytes())
+          ent['com.apple.security.get-task-allow'] = True
+          Path('.artifacts/test.entitlements').write_bytes(plistlib.dumps(ent))
+          PY2
+          codesign --force --deep --sign - --entitlements .artifacts/test.entitlements \
+            .artifacts/build/Build/Products/Debug-maccatalyst/Tower.app
+          codesign --verify --deep --strict --verbose=2 \
+            .artifacts/build/Build/Products/Debug-maccatalyst/Tower.app
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild -project Tower.xcodeproj -scheme Tower -configuration Debug \
+            -destination 'platform=macOS,variant=Mac Catalyst,arch=x86_64' \
+            -derivedDataPath .artifacts/build \
+            CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 MACOSX_DEPLOYMENT_TARGET=13.0 \
+            -only-testing:TowerTests test-without-building 2>&1 | tee .artifacts/tests.log
+      - name: Validate localization
+        run: |
+          set -o pipefail
+          bash Scripts/check_localization.sh 2>&1 | tee .artifacts/localization.log
       - name: Upload build diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -98,3 +121,4 @@ jobs:
           name: build-diagnostics
           path: .artifacts/*.log
           retention-days: 14
+          include-hidden-files: true
