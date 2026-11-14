@@ -93,6 +93,12 @@ struct TowerEmptyState: View {
     private let detail: AnyView
     private let actions: AnyView
 
+    init(_ title: Text, systemImage: String, description: Text? = nil) {
+        label = AnyView(Label { title } icon: { Image(systemName: systemImage) })
+        detail = AnyView(description)
+        actions = AnyView(EmptyView())
+    }
+
     init(_ title: LocalizedStringKey, systemImage: String, description: Text? = nil) {
         label = AnyView(Label(title, systemImage: systemImage))
         detail = AnyView(description)
@@ -115,7 +121,7 @@ struct TowerEmptyState: View {
     }
 
     static func search(text: String) -> some View {
-        TowerEmptyState("没有搜索结果", systemImage: "magnifyingglass", description: Text(verbatim: text))
+        TowerEmptyState(Text("没有搜索结果", tableName: "Ventura"), systemImage: "magnifyingglass", description: Text(verbatim: text))
     }
 
     var body: some View {

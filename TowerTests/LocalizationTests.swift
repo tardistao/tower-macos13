@@ -32,6 +32,19 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testVenturaSearchMessageContainsEverySupportedLocale() throws {
+        let catalog = try loadCatalog(named: "Ventura")
+        let strings = try XCTUnwrap(catalog["strings"] as? [String: Any])
+        let entry = try XCTUnwrap(strings["没有搜索结果"] as? [String: Any])
+        let translations = try XCTUnwrap(entry["localizations"] as? [String: Any])
+        XCTAssertEqual(Set(translations.keys), Set(supportedLocales))
+        for locale in supportedLocales {
+            let item = try XCTUnwrap(translations[locale] as? [String: Any])
+            let unit = try XCTUnwrap(item["stringUnit"] as? [String: Any])
+            XCTAssertFalse(try XCTUnwrap(unit["value"] as? String).isEmpty)
+        }
+    }
+
     func testInfoPlistPrivacyPromptsAreLocalized() throws {
         let catalog = try loadCatalog(named: "InfoPlist")
         let strings = try XCTUnwrap(catalog["strings"] as? [String: Any])

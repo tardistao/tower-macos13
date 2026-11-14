@@ -47,6 +47,10 @@ jobs:
             -derivedDataPath .artifacts/tests \
             CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 \
             -only-testing:TowerTests test 2>&1 | tee .artifacts/tests.log
+      - name: Validate localization
+        run: |
+          set -o pipefail
+          bash Scripts/check_localization.sh 2>&1 | tee .artifacts/localization.log
       - name: Package and verify
         run: |
           set -euo pipefail
@@ -74,6 +78,11 @@ jobs:
           assert match and match[1] == '6', 'Expected Mac Catalyst Mach-O'
           assert tuple(map(int,match[2].split('.'))) < (17,), match[2]
           PY
+          open -n "$APP"
+          sleep 5
+          APP_PID="$(pgrep -x Tower)"
+          test -n "$APP_PID"
+          kill "$APP_PID"
           ditto -c -k --sequesterRsrc --keepParent "$APP" .artifacts/dist/Tower-macOS13-Intel.zip
           shasum -a 256 .artifacts/dist/Tower-macOS13-Intel.zip > .artifacts/dist/SHA256SUMS.txt
       - name: Upload installable app

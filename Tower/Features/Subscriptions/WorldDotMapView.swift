@@ -685,7 +685,7 @@ struct WorldDotMapView: View {
         markers.first(where: \.isSelected)?.id
     }
 
-    private struct MagnificationValue {
+    private struct MagnificationValue: Equatable {
         let magnification: CGFloat
         let startAnchor: UnitPoint
     }
