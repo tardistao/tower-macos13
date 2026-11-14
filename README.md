@@ -1,3 +1,9 @@
+> **macOS 13 / Intel 兼容分支（非官方）**
+>
+> 本分支基于 Tower 1.0.31（76）适配 Ventura。安装包和验证结果请查看 [云端构建](https://github.com/tardistao/tower-macos13/actions/workflows/ventura.yml)，附件名称为 `Tower-macOS13-Intel`。下方上游 1.0.31 DMG 要求 macOS 14，不能用于 Ventura。
+>
+> 自编译包使用临时签名，未经 Apple 公证；不包含作者的 iCloud 授权，因此 iCloud 同步不可用。macOS 13 实机运行仍需验证。
+
 <div align="center">
 
 <img src="docs/images/icon.png" width="128" alt="塔台图标">
