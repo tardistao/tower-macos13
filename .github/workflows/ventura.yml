@@ -1,0 +1,91 @@
+name: Tower Ventura Intel
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tower-ventura
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select stable Xcode
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import pathlib, re
+          candidates = []
+          for app in pathlib.Path('/Applications').glob('Xcode*.app'):
+              match = re.fullmatch(r'Xcode_(\d+(?:\.\d+)*)\.app', app.name)
+              if match and int(match[1].split('.')[0]) >= 26:
+                  candidates.append((tuple(map(int, match[1].split('.'))), app))
+          if not candidates:
+              raise SystemExit('Stable Xcode 26 or later is required')
+          print('DEVELOPER_DIR=' + str(max(candidates)[1] / 'Contents/Developer'))
+          PY
+      - name: Compile Intel Ventura app
+        run: |
+          set -o pipefail
+          xcodebuild -version
+          mkdir -p .artifacts
+          xcodebuild -project Tower.xcodeproj -scheme Tower -configuration Release \
+            -destination 'generic/platform=macOS,variant=Mac Catalyst' \
+            -derivedDataPath .artifacts/build \
+            ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            CODE_SIGNING_ALLOWED=NO PRODUCT_BUNDLE_IDENTIFIER=com.tardistao.tower.ventura \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) TOWER_COMMUNITY_BUILD' \
+            build 2>&1 | tee .artifacts/build.log
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild -project Tower.xcodeproj -scheme Tower -configuration Debug \
+            -destination 'platform=macOS,variant=Mac Catalyst,arch=x86_64' \
+            -derivedDataPath .artifacts/tests \
+            CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            -only-testing:TowerTests test 2>&1 | tee .artifacts/tests.log
+      - name: Package and verify
+        run: |
+          set -euo pipefail
+          APP=.artifacts/build/Build/Products/Release-maccatalyst/Tower.app
+          mkdir -p .artifacts/dist
+          python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          p = Path('.artifacts/build/Build/Products/Release-maccatalyst/Tower.app/Contents/Info.plist')
+          info = plistlib.loads(p.read_bytes())
+          assert int(info['LSMinimumSystemVersion'].split('.')[0]) <= 13, info
+          ent = plistlib.loads(Path('Tower/TowerMac.entitlements').read_bytes())
+          ent = {k:v for k,v in ent.items() if not k.startswith('com.apple.developer.')}
+          Path('.artifacts/adhoc.entitlements').write_bytes(plistlib.dumps(ent))
+          PY
+          codesign --force --sign - --entitlements .artifacts/adhoc.entitlements "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          lipo -info "$APP/Contents/MacOS/Tower" | tee .artifacts/dist/architecture.txt
+          otool -l "$APP/Contents/MacOS/Tower" > .artifacts/dist/load-commands.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s = Path('.artifacts/dist/load-commands.txt').read_text()
+          match = re.search(r'cmd LC_BUILD_VERSION\s+cmdsize \d+\s+platform (\d+)\s+minos (\S+)', s)
+          assert match and match[1] == '6', 'Expected Mac Catalyst Mach-O'
+          assert tuple(map(int,match[2].split('.'))) < (14,), match[2]
+          PY
+          ditto -c -k --sequesterRsrc --keepParent "$APP" .artifacts/dist/Tower-macOS13-Intel.zip
+          shasum -a 256 .artifacts/dist/Tower-macOS13-Intel.zip > .artifacts/dist/SHA256SUMS.txt
+      - name: Upload installable app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tower-macOS13-Intel
+          path: .artifacts/dist/
+          retention-days: 30
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics
+          path: .artifacts/*.log
+          retention-days: 14

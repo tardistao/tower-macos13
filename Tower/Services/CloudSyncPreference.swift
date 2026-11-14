@@ -10,7 +10,11 @@ enum CloudSyncPreference {
     private static let key = "icloud-sync-enabled"
 
     static func isEnabled(defaults: UserDefaults = TowerTestIsolation.defaults) -> Bool {
+        #if TOWER_COMMUNITY_BUILD
+        false
+        #else
         defaults.bool(forKey: key)
+        #endif
     }
 
     static func setEnabled(_ enabled: Bool, defaults: UserDefaults = TowerTestIsolation.defaults) {

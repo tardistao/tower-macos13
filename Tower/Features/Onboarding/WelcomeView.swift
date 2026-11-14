@@ -59,7 +59,7 @@ struct WelcomeView: View {
         .frame(maxHeight: TowerPlatform.isMac ? 760 : .infinity)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(TowerTheme.background.ignoresSafeArea())
-        .sensoryFeedback(.selection, trigger: page)
+        .towerSensoryFeedback(.selection, trigger: page)
     }
 
     private var journey: some View {
@@ -77,7 +77,7 @@ struct WelcomeView: View {
     private func journeyItem(_ title: LocalizedStringKey, symbol: String, step: Int) -> some View {
         HStack(spacing: 5) {
             Image(systemName: page > step ? "checkmark" : symbol)
-                .contentTransition(.symbolEffect(.replace))
+                .contentTransition(.opacity)
             Text(title).lineLimit(1).minimumScaleFactor(0.7)
         }
         .font(.caption.weight(.semibold))
@@ -165,7 +165,7 @@ struct WelcomeView: View {
         let destination = min(3, max(0, target))
         guard destination != page else { return }
         withAnimation(reduceMotion ? .easeOut(duration: TowerMotion.reducedMotionDuration)
-                      : .spring(duration: 0.5, bounce: 0.2)) {
+                      : .spring(response: 0.5, dampingFraction: 0.80)) {
             page = destination
         }
     }
@@ -331,7 +331,12 @@ private struct WelcomeSceneLoop<Phase: Equatable, Content: View>: View {
         if reduceMotion {
             content(finished)
         } else if isActive {
-            PhaseAnimator(phases, content: content, animation: animation)
+            if #available(iOS 17.0, macCatalyst 17.0, *) {
+                PhaseAnimator(phases, content: content, animation: animation)
+            } else {
+                // Ventura keeps the explanatory final frame; navigation and examples remain usable.
+                content(finished)
+            }
         } else {
             content(phases[0])
         }
@@ -431,10 +436,10 @@ private enum OverviewPhase {
     /// the delays: PhaseAnimator only moves on once the previous step lands.
     func animation(index: Int = 0) -> Animation {
         switch self {
-        case .gather: .spring(duration: 0.7, bounce: 0).delay(0.8 + Double(index) * 0.08)
-        case .process: .spring(duration: 0.45, bounce: 0.3)
-        case .deliver: .spring(duration: 0.75, bounce: 0).delay(0.15 + Double(index) * 0.09)
-        case .done: .spring(duration: 0.4, bounce: 0.35).delay(Double(index) * 0.09)
+        case .gather: .spring(response: 0.7, dampingFraction: 1.00).delay(0.8 + Double(index) * 0.08)
+        case .process: .spring(response: 0.45, dampingFraction: 0.70)
+        case .deliver: .spring(response: 0.75, dampingFraction: 1.00).delay(0.15 + Double(index) * 0.09)
+        case .done: .spring(response: 0.4, dampingFraction: 0.65).delay(Double(index) * 0.09)
         case .idle: .easeOut(duration: 0.35).delay(1.8)
         case .summary: .default
         }
@@ -607,10 +612,10 @@ private enum AddPhase: CaseIterable {
         case .press: .easeOut(duration: 0.2).delay(0.7)
         // Linear, because the link reads as text arriving left to right.
         case .pasted: .linear(duration: 0.5).delay(0.1)
-        case .recognized: .spring(duration: 0.4, bounce: 0.2).delay(0.25)
-        case .nodes: .spring(duration: 0.5, bounce: 0.15).delay(0.35 + Double(index) * 0.08)
+        case .recognized: .spring(response: 0.4, dampingFraction: 0.80).delay(0.25)
+        case .nodes: .spring(response: 0.5, dampingFraction: 0.85).delay(0.35 + Double(index) * 0.08)
         case .measured: .easeOut(duration: 0.25).delay(0.6 + Double(index) * 0.15)
-        case .chosen: .spring(duration: 0.35, bounce: 0.3).delay(0.8)
+        case .chosen: .spring(response: 0.35, dampingFraction: 0.70).delay(0.8)
         case .empty: .easeOut(duration: 0.3).delay(2)
         }
     }
@@ -861,9 +866,9 @@ private struct WelcomeRoutingScene: View {
         if phase == 0 { return .easeOut(duration: 0.3).delay(1.8) }
         if phase.isMultiple(of: 2) {
             // A pause at the scheme first, long enough to read the rule.
-            return .spring(duration: 0.55, bounce: 0.1).delay(0.65)
+            return .spring(response: 0.55, dampingFraction: 0.90).delay(0.65)
         }
-        return .spring(duration: 0.5, bounce: 0).delay(phase == 1 ? 0.6 : 0.15)
+        return .spring(response: 0.5, dampingFraction: 1.00).delay(phase == 1 ? 0.6 : 0.15)
     }
 
     private var accessibilitySummary: String {
@@ -1010,7 +1015,7 @@ private struct RoutingDiagram: View {
             Text(verbatim: lane.title).font(.caption.weight(.semibold))
             Text(verbatim: "\(count)")
                 .font(.caption2.weight(.bold).monospacedDigit())
-                .contentTransition(.numericText(value: Double(count)))
+                .contentTransition(.towerNumericText(value: Double(count)))
                 .foregroundStyle(.white)
                 .frame(minWidth: 16, minHeight: 16)
                 .background(lane.tint, in: Circle())
@@ -1094,7 +1099,7 @@ private struct WelcomeExportExample: View {
                                 .foregroundStyle(.primary)
                             Image(systemName: client == target ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(client == target ? Color.accentColor : Color.secondary.opacity(0.5))
-                                .contentTransition(.symbolEffect(.replace))
+                                .contentTransition(.opacity)
                         }
                         .padding(.vertical, 6).frame(maxWidth: .infinity, minHeight: 84)
                         .contentShape(Rectangle())
@@ -1135,8 +1140,8 @@ private struct WelcomeExportExample: View {
         }
         .coordinateSpace(.named(Self.space))
         .overlay { flight }
-        .sensoryFeedback(.selection, trigger: client)
-        .onChange(of: client) { deliveries += 1 }
+        .towerSensoryFeedback(.selection, trigger: client)
+        .towerOnChange(of: client) { deliveries += 1 }
         .task(id: isActive) {
             // Hand the first configuration over once the page has settled.
             guard isActive else { return }
@@ -1168,7 +1173,7 @@ private struct WelcomeExportExample: View {
             .clipShape(RoundedRectangle(cornerRadius: 8))
         if reduceMotion {
             icon
-        } else {
+        } else if #available(iOS 17.0, macCatalyst 17.0, *) {
             KeyframeAnimator(initialValue: ReceiverFrame(), trigger: deliveries) { frame in
                 icon
                     .opacity(frame.opacity)
@@ -1185,6 +1190,8 @@ private struct WelcomeExportExample: View {
                     SpringKeyframe(1, duration: 0.35, spring: .bouncy)
                 }
             }
+        } else {
+            icon
         }
     }
 
@@ -1192,7 +1199,8 @@ private struct WelcomeExportExample: View {
     /// button, shrinking to the button's icon size on the way: choosing a
     /// client is what sets where the configuration goes.
     @ViewBuilder private var flight: some View {
-        if !reduceMotion, let start = tileIconFrames[client.id], receiverFrame != .zero {
+        if #available(iOS 17.0, macCatalyst 17.0, *),
+           !reduceMotion, let start = tileIconFrames[client.id], receiverFrame != .zero {
             let end = receiverFrame
             KeyframeAnimator(initialValue: FlightFrame(), trigger: deliveries) { frame in
                 let t = frame.progress

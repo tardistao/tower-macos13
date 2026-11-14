@@ -96,7 +96,7 @@ final class NodeExportGroupCache {
 
 struct NodeFilterSections: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(AppModel.self) private var model
+    @EnvironmentObject private var model: AppModel
 
     @Binding var searchText: String
     @Binding var showsNameFilter: Bool
@@ -152,7 +152,7 @@ struct NodeFilterSections: View {
 
             Section {
                 if filteredNodes.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
+                    TowerEmptyState.search(text: searchText)
                         .listRowBackground(Color.clear)
                 } else {
                     ForEach(filteredNodes) { node in
@@ -164,8 +164,8 @@ struct NodeFilterSections: View {
                     Text("节点 · \(includedFilteredNodeCount) / \(filteredNodes.count)")
                         // Scope motion to glyphs; a header transaction must not
                         // animate the List's row diff when search is dismissed.
-                        .animation(TowerMotion.selection(reduceMotion: reduceMotion)) { content in
-                            content.contentTransition(reduceMotion ? .opacity : .numericText(value: Double(includedFilteredNodeCount)))
+                        .towerScopedAnimation(TowerMotion.selection(reduceMotion: reduceMotion)) { content in
+                            content.contentTransition(reduceMotion ? .opacity : .towerNumericText(value: Double(includedFilteredNodeCount)))
                         }
                     Spacer()
                     bulkSelectionButton(
@@ -410,7 +410,7 @@ struct NodeFilterSections: View {
 /// The same editor used by policy-group name rules, with a separate saved
 /// condition that controls which nodes reach every export destination.
 struct NodeExportNameFilterSheet: View {
-    @Environment(AppModel.self) private var model
+    @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var pattern: String
     @State private var previewResult: NodeNameFilterPreviewResult?

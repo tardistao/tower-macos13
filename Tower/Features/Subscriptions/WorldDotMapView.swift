@@ -541,14 +541,14 @@ struct WorldDotMapView: View {
                 panGesture(in: geometry.size),
                 including: viewport.scale > Viewport.minimumScale + 0.001 || viewportAnimationToken != nil ? .gesture : .none
             )
-            .onChange(of: geometry.size) { _, size in
+            .towerOnChange(of: geometry.size) { _, size in
                 let normalized = viewport.normalized(in: size)
                 viewportAnimationToken = nil
                 updateViewportWithoutAnimation(normalized)
                 displayedLevel = normalized.level
                 settleRasterIfIdle()
             }
-            .onChange(of: selectedMarkerID) { _, markerID in
+            .towerOnChange(of: selectedMarkerID) { _, markerID in
                 guard let markerID,
                       let marker = markers.first(where: { $0.id == markerID }) else {
                     return
@@ -1052,7 +1052,7 @@ struct WorldDotMapView: View {
     private func withViewportAnimation(_ animation: Animation? = nil, _ updates: () -> Void) {
         let token = UUID()
         viewportAnimationToken = reduceMotion ? nil : token
-        withAnimation(reduceMotion ? nil : animation ?? .spring(response: 0.34, dampingFraction: 1),
+        towerWithAnimation(reduceMotion ? nil : animation ?? .spring(response: 0.34, dampingFraction: 1),
                       completionCriteria: .removed, updates) {
             guard viewportAnimationToken == token else { return }
             viewportAnimationToken = nil
