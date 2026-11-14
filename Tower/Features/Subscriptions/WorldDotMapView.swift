@@ -685,8 +685,24 @@ struct WorldDotMapView: View {
         markers.first(where: \.isSelected)?.id
     }
 
+    private struct MagnificationValue {
+        let magnification: CGFloat
+        let startAnchor: UnitPoint
+    }
+
     private func magnifyGesture(in size: CGSize) -> some Gesture {
-        MagnifyGesture()
+        let gesture: AnyGesture<MagnificationValue>
+        if #available(iOS 17.0, macCatalyst 17.0, *) {
+            gesture = AnyGesture(MagnifyGesture().map {
+                MagnificationValue(magnification: $0.magnification, startAnchor: $0.startAnchor)
+            })
+        } else {
+            // The older gesture reports scale only; use the map centre as the zoom anchor.
+            gesture = AnyGesture(MagnificationGesture().map {
+                MagnificationValue(magnification: $0, startAnchor: .center)
+            })
+        }
+        return gesture
             .onChanged { value in
                 if magnifyStartViewport == nil {
                     takeOverViewport(in: size)
@@ -984,7 +1000,7 @@ struct WorldDotMapView: View {
             isRecenteringSelection = true
         }
 
-        withAnimation(.spring(response: 0.38, dampingFraction: 1)) {
+        towerWithAnimation(.spring(response: 0.38, dampingFraction: 1)) {
             viewport = target
             displayedLevel = target.level
         } completion: {

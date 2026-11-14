@@ -273,7 +273,7 @@ struct NodeFilterSections: View {
             }
             Divider()
             Button("完成") {}
-                .menuActionDismissBehavior(.enabled)
+                .towerCloseMenuOnAction()
         } label: {
             FilterRow(
                 title: String(localized: "国家地区"),
@@ -284,7 +284,7 @@ struct NodeFilterSections: View {
         }
         // Region selection is a multi-select task: keep the native menu open
         // for toggles, and dismiss only via Done or a tap outside the menu.
-        .menuActionDismissBehavior(.disabled)
+        .towerKeepMenuOpen()
         // A List tints a menu's label like a link; this row reads as a setting.
         .buttonStyle(.plain)
         .listRowInsets(FilterRow.insets)
@@ -307,7 +307,7 @@ struct NodeFilterSections: View {
             }
             Divider()
             Button("完成") {}
-                .menuActionDismissBehavior(.enabled)
+                .towerCloseMenuOnAction()
         } label: {
             FilterRow(
                 title: String(localized: "协议"),
@@ -317,7 +317,7 @@ struct NodeFilterSections: View {
             )
         }
         // Keep the protocol menu open while selecting multiple kinds.
-        .menuActionDismissBehavior(.disabled)
+        .towerKeepMenuOpen()
         // A List tints a menu's label like a link; this row reads as a setting.
         .buttonStyle(.plain)
         .listRowInsets(FilterRow.insets)

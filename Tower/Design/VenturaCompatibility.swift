@@ -2,6 +2,44 @@ import SwiftUI
 
 /// Small UI fallbacks for the Mac Catalyst 16 / macOS 13 community build.
 extension View {
+    @ViewBuilder
+    func towerGeometryGroup() -> some View {
+        if #available(iOS 17.0, macCatalyst 17.0, *) { geometryGroup() }
+        else { self }
+    }
+
+    @ViewBuilder
+    func towerToggleAccessibility(isOn: Bool) -> some View {
+        if #available(iOS 17.0, macCatalyst 17.0, *) { accessibilityAddTraits(.isToggle) }
+        else { accessibilityAddTraits(isOn ? .isSelected : []) }
+    }
+
+    @ViewBuilder
+    func towerScrollBounceBasedOnSize() -> some View {
+        if #available(iOS 16.4, macCatalyst 16.4, *) { scrollBounceBehavior(.basedOnSize) }
+        else { self }
+    }
+
+    @ViewBuilder
+    func towerCloseMenuOnAction() -> some View {
+        if #available(iOS 16.4, macCatalyst 16.4, *) { menuActionDismissBehavior(.enabled) }
+        else { self }
+    }
+
+    @ViewBuilder
+    func towerKeepMenuOpen() -> some View {
+        if #available(iOS 16.4, macCatalyst 16.4, *) { menuActionDismissBehavior(.disabled) }
+        else { self }
+    }
+
+    func towerNavigationDestination<Item, Destination: View>(item: Binding<Item?>,
+                                                              @ViewBuilder destination: @escaping (Item) -> Destination) -> some View {
+        navigationDestination(isPresented: Binding(get: { item.wrappedValue != nil },
+                                                   set: { if !$0 { item.wrappedValue = nil } })) {
+            if let value = item.wrappedValue { destination(value) }
+        }
+    }
+
     func towerOnChange<Value: Equatable>(of value: Value, initial: Bool = false,
                                          _ action: @escaping (Value, Value) -> Void) -> some View {
         modifier(TowerChangeModifier(value: value, initial: initial, action: action))
@@ -98,7 +136,7 @@ enum TowerAnimationCompletionCriteria { case removed }
 /// finish a newer drag. Ventura lacks SwiftUI's animation-completion transaction.
 @MainActor
 func towerWithAnimation<Result>(_ animation: Animation? = .default,
-                                 completionCriteria: TowerAnimationCompletionCriteria,
+                                 completionCriteria: TowerAnimationCompletionCriteria = .removed,
                                  _ body: () throws -> Result,
                                  completion: @escaping () -> Void) rethrows -> Result {
     if #available(iOS 17.0, macCatalyst 17.0, *) {

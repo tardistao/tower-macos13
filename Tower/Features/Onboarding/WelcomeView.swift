@@ -262,7 +262,7 @@ private struct WelcomePageContent: View {
             }
             .padding(.horizontal, 26).padding(.bottom, 24)
         }
-        .scrollBounceBehavior(.basedOnSize)
+        .towerScrollBounceBasedOnSize()
     }
 
     private var introductionHeading: some View {
@@ -1138,7 +1138,7 @@ private struct WelcomeExportExample: View {
             }
             .padding(18).towerCard()
         }
-        .coordinateSpace(.named(Self.space))
+        .coordinateSpace(name: Self.space)
         .overlay { flight }
         .towerSensoryFeedback(.selection, trigger: client)
         .towerOnChange(of: client) { deliveries += 1 }

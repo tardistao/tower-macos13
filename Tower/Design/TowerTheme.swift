@@ -457,7 +457,7 @@ struct CheckmarkToggleStyle: ToggleStyle {
                 .contentShape(Rectangle())
         }
         .buttonStyle(SelectionIndicatorButtonStyle())
-        .accessibilityAddTraits(.isToggle)
+        .towerToggleAccessibility(isOn: configuration.isOn)
         // Every other choice in the app taps back — the tab bar, the rule
         // list, the client picker. This one was the exception.
         .towerSensoryFeedback(.selection, trigger: configuration.isOn) { _, _ in !isSwipeSizingCopy }
@@ -598,6 +598,7 @@ struct CardSwipeDeletion: ViewModifier {
                 }
                 .clipped()
                 .onGeometryChange(for: Bool?.self) { geometry in
+                    guard #available(iOS 17.0, macCatalyst 17.0, *) else { return true }
                     guard let viewport = geometry.bounds(of: .scrollView) else { return true }
                     // Keep the last visibility through transient zero-size layouts.
                     guard viewport.width > 0, viewport.height > 0 else { return nil }

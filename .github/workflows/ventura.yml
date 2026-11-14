@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
           s = Path('.artifacts/dist/load-commands.txt').read_text()
           match = re.search(r'cmd LC_BUILD_VERSION\s+cmdsize \d+\s+platform (\d+)\s+minos (\S+)', s)
           assert match and match[1] == '6', 'Expected Mac Catalyst Mach-O'
-          assert tuple(map(int,match[2].split('.'))) < (14,), match[2]
+          assert tuple(map(int,match[2].split('.'))) < (17,), match[2]
           PY
           ditto -c -k --sequesterRsrc --keepParent "$APP" .artifacts/dist/Tower-macOS13-Intel.zip
           shasum -a 256 .artifacts/dist/Tower-macOS13-Intel.zip > .artifacts/dist/SHA256SUMS.txt

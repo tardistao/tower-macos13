@@ -129,7 +129,7 @@ struct RuleGroupDetailView: View {
             }
             lineCounts = counts
         }
-        .navigationDestination(item: $openedSource) { source in
+        .towerNavigationDestination(item: $openedSource) { source in
             RulesetContentView(ruleset: source)
         }
         .task(id: nodeFilterPreviewInput) {

@@ -666,7 +666,7 @@ struct ExpandableNodeRow: View {
             usesInsetBackground ? Color.primary.opacity(0.045) : Color.clear,
             in: RoundedRectangle(cornerRadius: 14, style: .continuous)
         )
-        .geometryGroup()
+        .towerGeometryGroup()
         .clipped()
         .task(id: "\(node.server)|\(isExpanded)") {
             if isExpanded { await model.resolveNetworkDetails(for: node) }

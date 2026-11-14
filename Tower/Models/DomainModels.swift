@@ -844,7 +844,7 @@ struct ProxyNode: Identifiable, Codable, Hashable {
             skipCertificateVerification ? "1" : "0"
         ])
         fields.append(contentsOf: [
-            alterID.map(String.init) ?? "", protocolName ?? "", protocolParam ?? "",
+            alterID.map { String($0) } ?? "", protocolName ?? "", protocolParam ?? "",
             obfs ?? "", obfsParam ?? ""
         ])
         let idleCheck = idleSessionCheckInterval.map { String($0) } ?? ""
@@ -855,13 +855,13 @@ struct ProxyNode: Identifiable, Codable, Hashable {
         fields.append(contentsOf: [
             congestionControl ?? "", udpRelayMode ?? "", portHopping ?? "",
             udpRelayEnabled.map { $0 ? "1" : "0" } ?? "",
-            upMbps.map(String.init) ?? "", downMbps.map(String.init) ?? ""
+            upMbps.map { String($0) } ?? "", downMbps.map { String($0) } ?? ""
         ])
         fields.append(contentsOf: [
             wireGuardPrivateKey ?? "", wireGuardPublicKey ?? "", wireGuardPreSharedKey ?? "",
             wireGuardIPv4 ?? "", wireGuardIPv6 ?? "", wireGuardAllowedIPs ?? "",
-            wireGuardReserved ?? "", wireGuardMTU.map(String.init) ?? "",
-            wireGuardPersistentKeepalive.map(String.init) ?? "", wireGuardDNS ?? ""
+            wireGuardReserved ?? "", wireGuardMTU.map { String($0) } ?? "",
+            wireGuardPersistentKeepalive.map { String($0) } ?? "", wireGuardDNS ?? ""
         ])
         if let shadowTLS {
             // Append only for wrapped nodes: existing persisted exclusion keys
